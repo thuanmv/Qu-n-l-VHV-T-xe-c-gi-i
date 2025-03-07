@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý Vận hàn viên Tổ xe cơ giới</title>
+    <style>
+        .container {
+            width: 90%; /* Tăng width container để chứa nhiều ô hơn */
+            margin: 20px auto;
+            text-align: center;
+        }
+        .driver-box {
+            width: 300px; /* Tăng width để hiển thị hết nội dung */
+            height: 100px;
+            margin: 10px;
+            display: inline-block;
+            text-align: center;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+            color: white;
+            cursor: pointer;
+            border-radius: 10px;
+            line-height: 50px; /* Giảm line-height để hiển thị 2 dòng */
+            padding: 10px; /* Thêm padding để nội dung không sát viền */
+            box-sizing: border-box; /* Đảm bảo padding không làm tăng kích thước */
+        }
+        .idle {
+            background-color: green;
+        }
+        .working {
+            background-color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Quản lý Vận hành viên Tổ xe cơ giới</h1>
+        <div id="driver-list"></div>
+    </div>
+
+    <script>
+        // Danh sách 28 tài xế
+        const drivers = [
+            "Nguyễn Thế Vinh", "Nguyễn Hà Duy", "Đỗ Thanh Huy", "Lưu Văn Quỳnh", "Dương Vinh Hoàng",
+            "Nguyễn Văn Cảnh", "Nguyễn Trung Thắng", "Huỳnh Thanh Tú", "Đường Văn Đức", "Đỗ Anh Hào",
+            "Nguyễn Đức Hợp", "Hoàng Cảnh Đạt", "Dương Ngọc Cường", "Phan Quang Hải", "Huỳnh Thanh Hiếu",
+            "Nguyễn Huy Hoàng", "Nguyễn Văn Hoàng", "Lê Tấn Đức", "Nguyễn Văn Thương", "Ngô Đức Quỳnh",
+            "Nguyễn Thành Lợi", "Trần Văn Công", "Đào Văn Dũng", "Nguyễn Hữu Đông", "Nguyễn Sỹ Hào",
+            "Nguyễn Văn Thuận", "Trần Văn Linh", "Minh Văn Thuận"
+        ];
+
+        // Lấy phần tử để hiển thị danh sách tài xế
+        const container = document.getElementById('driver-list');
+
+        // Tạo ô cho từng tài xế
+        drivers.forEach((driver) => {
+            const div = document.createElement('div');
+            div.className = 'driver-box idle'; // Mặc định là xanh (rảnh)
+            div.textContent = driver;
+            div.dataset.name = driver; // Lưu tên gốc
+            div.onclick = () => toggleStatus(div); // Gán sự kiện nhấn
+            container.appendChild(div);
+        });
+
+        // Hàm chuyển đổi trạng thái và hiển thị thời gian
+        function toggleStatus(element) {
+            if (element.classList.contains('idle')) {
+                // Chuyển sang trạng thái làm việc (đỏ)
+                element.classList.remove('idle');
+                element.classList.add('working');
+                const startTime = new Date().toLocaleTimeString('vi-VN');
+                element.textContent = `${element.dataset.name}\nBắt đầu: ${startTime}`; // Xuống dòng
+                element.dataset.startTime = startTime;
+            } else {
+                // Chuyển về trạng thái rảnh (xanh)
+                element.classList.remove('working');
+                element.classList.add('idle');
+                const endTime = new Date().toLocaleTimeString('vi-VN');
+                element.textContent = `${element.dataset.name}\nKết thúc: ${endTime}`; // Xuống dòng
+                // Sau 2 giây, xóa thời gian kết thúc
+                setTimeout(() => {
+                    if (element.classList.contains('idle')) {
+                        element.textContent = element.dataset.name;
+                    }
+                }, 2000);
+            }
+        }
+    </script>
+</body>
+</html>
