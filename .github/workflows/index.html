@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Tài Xế</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            text-align: center;
+            margin: 20px 0;
+            color: #333;
+        }
+        .driver-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .driver-box {
+            border: 2px solid #000;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            white-space: pre-wrap;
+            font-size: 14px;
+        }
+        .idle {
+            background-color: #90ee90; /* Xanh lá */
+        }
+        .working {
+            background-color: #ff6347; /* Đỏ */
+        }
+    </style>
+</head>
+<body>
+    <h1>Quản Lý Tài Xế</h1>
+    <div id="driver-list" class="driver-container"></div>
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBCtrkrtvDYpbj2gCd6X-1owvaYzfrhscM",
+            authDomain: "quanlyvhvtoxecogoi.firebaseapp.com",
+            projectId: "quanlyvhvtoxecogoi",
+            storageBucket: "quanlyvhvtoxecogoi.firebasestorage.app",
+            messagingSenderId: "672389134396",
+            appId: "1:672389134396:web:81cd56e34142f9bf8dab39",
+            measurementId: "G-NJHYQ3H4V3"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Danh sách 28 tài xế
+        const drivers = [
+            "Nguyễn Thế Vinh", "Nguyễ Hà Duy", "Đỗ Thanh Huy", "Lưu Văn Quỳnh", "Dương Vinh Hoàng",
+            "Nguyễn Văn Cảnh", "Nguyễn Trung Thắng", "Huỳnh Thanh Tú", "Đường Văn Đức", "Đỗ Anh Hào",
+            "Nguyễn Đức Hợp", "Hoàng Cảnh Đạt", "Dương Ngọc Cường", "Phan Quang Hải", "Huỳnh Thanh Hiếu",
+            "Nguyễn Huy Hoàng", "Nguyễn Văn Hoàng", "Lê Tấn Đức", "Nguyễn Văn Thương", "Ngô Đức Quỳnh",
+            "Nguyễn Thành Lợi", "Trần Văn Công", "Đào Văn Dũng", "Nguyễn Hữu Đông", "Nguyễn Sỹ Hào",
+            "Nguyễn Văn Thuận", "Trần Văn Linh", "Minh Văn Thuận"
+        ];
+
+        const container = document.getElementById('driver-list');
+
+        // Tạo ô cho từng tài xế
+        drivers.forEach((driver) => {
+            const div = document.createElement('div');
+            div.className = 'driver-box idle';
+            div.textContent = driver;
+            div.dataset.name = driver;
+            div.dataset.id = driver.replace(/\s/g, '_');
+            div.onclick = () => toggleStatus(div);
+
+            // Khôi phục trạng thái từ Firestore
+            const docRef = doc(db, 'drivers', div.dataset.id);
+            getDoc(docRef).then((docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.status === 'working') {
+                        div.classList.remove('idle');
+                        div.classList.add('working');
+                        div.textContent = `${div.dataset.name}\nBắt đầu: ${data.time}`;
+                        div.dataset.startTime = data.time;
+                    } else if (data.status === 'idle' && data.time) {
+                        div.classList.remove('working');
+                        div.classList.add('idle');
+                        div.textContent = `${div.dataset.name}\nKết thúc: ${data.time}`;
+                        setTimeout(() => {
+                            if (div.classList.contains('idle')) {
+                                div.textContent = div.dataset.name;
+                            }
+                        }, 2000);
+                    }
+                }
+            });
+
+            container.appendChild(div);
+        });
+
+        // Hàm chuyển đổi trạng thái và lưu vào Firestore
+        function toggleStatus(element) {
+            const docRef = doc(db, 'drivers', element.dataset.id);
+            if (element.classList.contains('idle')) {
+                element.classList.remove('idle');
+                element.classList.add('working');
+                const startTime = new Date().toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+                element.textContent = `${element.dataset.name}\nBắt đầu: ${startTime}`;
+                element.dataset.startTime = startTime;
+                // Lưu vào Firestore
+                setDoc(docRef, { status: 'working', time: startTime });
+            } else {
+                element.classList.remove('working');
+                element.classList.add('idle');
+                const endTime = new Date().toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+                element.textContent = `${element.dataset.name}\nKết thúc: ${endTime}`;
+                // Lưu vào Firestore
+                setDoc(docRef, { status: 'idle', time: endTime });
+                setTimeout(() => {
+                    if (element.classList.contains('idle')) {
+                        element.textContent = element.dataset.name;
+                    }
+                }, 2000);
+            }
+        }
+
+        // Lắng nghe thay đổi từ Firestore để đồng bộ
+        onSnapshot(collection(db, 'drivers'), (snapshot) => {
+            snapshot.forEach((doc) => {
+                const id = doc.id;
+                const data = doc.data();
+                const element = document.querySelector(`[data-id="${id}"]`);
+                if (element) {
+                    if (data.status === 'working') {
+                        element.classList.remove('idle');
+                        element.classList.add('working');
+                        element.textContent = `${element.dataset.name}\nBắt đầu: ${data.time}`;
+                        element.dataset.startTime = data.time;
+                    } else if (data.status === 'idle' && data.time) {
+                        element.classList.remove('working');
+                        element.classList.add('idle');
+                        element.textContent = `${element.dataset.name}\nKết thúc: ${data.time}`;
+                        setTimeout(() => {
+                            if (element.classList.contains('idle')) {
+                                element.textContent = element.dataset.name;
+                            }
+                        }, 2000);
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
